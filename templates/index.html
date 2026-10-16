@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block body %}
+<section class="landing">
+  <nav class="landing-nav"><a class="brand" href="/"><span class="brand-mark">Q</span><span>Queue<span class="brand-accent">Less</span></span></a><div><a class="nav-text" href="#features">Features</a><a class="btn btn-outline" href="/login/patient">Patient Login</a></div></nav>
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <div class="eyebrow"><span class="live-dot"></span> SMART HOSPITAL QUEUE</div>
+      <h1>Skip the queue.<br><span>Save your time.</span></h1>
+      <p>QueueLess makes hospital visits simpler. Book a virtual token, see your doctor, track your queue and keep your payments in one place.</p>
+      <div class="hero-actions"><a class="btn btn-primary btn-lg" href="/login/patient">Book a token <span>→</span></a><a class="text-link" href="/signup/patient">Create patient account</a></div>
+      <div class="hero-trust"><span>✓ Live queue status</span><span>✓ Doctor availability</span><span>✓ Digital billing</span></div>
+    </div>
+    <div class="hero-card-wrap">
+      <div class="dashboard-preview">
+        <div class="preview-top"><div><small>City Care Hospital</small><b>General Medicine</b></div><span class="status-pill success">● Live</span></div>
+        <div class="token-display"><small>YOUR TOKEN</small><strong>#27</strong><span>2 patients ahead</span></div>
+        <div class="progress-line"><span></span></div>
+        <div class="preview-row"><div><small>Now serving</small><b>#24</b></div><div><small>Estimated wait</small><b>10 min</b></div><div><small>Doctor</small><b>Available</b></div></div>
+        <div class="preview-bill"><span>Consultation fee</span><b>₹800</b></div>
+      </div>
+      <div class="float-card float-one"><span class="mini-icon">✓</span><div><b>Token booked</b><small>Just now</small></div></div>
+      <div class="float-card float-two"><span class="mini-icon blue">₹</span><div><b>Payment tracked</b><small>₹1,200 pending</small></div></div>
+    </div>
+  </div>
+  <div id="features" class="feature-strip">
+    <div><span class="feature-icon">#</span><div><b>Virtual Tokens</b><small>Join without standing in line.</small></div></div>
+    <div><span class="feature-icon">●</span><div><b>Doctor Timings</b><small>See availability and breaks.</small></div></div>
+    <div><span class="feature-icon">₹</span><div><b>Clear Payments</b><small>Fees, tests and balance in one view.</small></div></div>
+    <div><span class="feature-icon">+</span><div><b>Emergency Priority</b><small>Staff can prioritize urgent cases.</small></div></div>
+  </div>
+  <div class="role-section"><div><div class="eyebrow">ONE HOSPITAL · FOUR ROLES</div><h2>Everything your hospital needs.</h2></div><div class="role-cards">
+    <a href="/login/patient" class="role-card"><b>Patient</b><span>Book tokens, tests and view billing →</span></a>
+    <a href="/login/receptionist" class="role-card"><b>Receptionist</b><span>Manage patients, queues and fees →</span></a>
+    <a href="/login/doctor" class="role-card"><b>Doctor</b><span>Manage patients, tests and consultation fees →</span></a>
+    <a href="/login/admin" class="role-card"><b>Admin</b><span>Manage departments and doctors →</span></a>
+  </div></div>
+</section>
+{% endblock %}

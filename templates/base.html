@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ title or 'QueueLess Hospital' }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="app-shell">
+<header class="topbar">
+  <a class="brand" href="/"><span class="brand-mark">Q</span><span>Queue<span class="brand-accent">Less</span></span></a>
+  <div class="top-actions">
+    {% if session.get('user_id') %}
+      <div class="user-chip"><span class="avatar">{{ session.get('user_name','U')[:1]|upper }}</span><span><b>{{ session.get('user_name') }}</b><small>{{ session.get('user_role')|capitalize }}</small></span></div>
+      <a class="logout-link" href="/logout">Logout</a>
+    {% else %}<a class="logout-link" href="/">Home</a>{% endif %}
+  </div>
+</header>
+{% if session.get('user_id') %}
+<aside class="sidebar">
+  <div class="side-label">MAIN MENU</div>
+  <a href="/dashboard" class="side-link active"><span class="side-icon">⌂</span>Dashboard</a>
+  {% if session.get('user_role') == 'patient' %}
+    <a href="/dashboard#tokens" class="side-link"><span class="side-icon">#</span>My Queue</a>
+    <a href="/dashboard#tests" class="side-link"><span class="side-icon">+</span>Tests</a>
+    <a href="/dashboard#payments" class="side-link"><span class="side-icon">₹</span>Payments</a>
+  {% elif session.get('user_role') == 'doctor' %}
+    <a href="/dashboard#queue" class="side-link"><span class="side-icon">≡</span>My Queue</a>
+    <a href="/dashboard#fees" class="side-link"><span class="side-icon">₹</span>Patient Fees</a>
+    <a href="/dashboard#tests" class="side-link"><span class="side-icon">+</span>Tests</a>
+  {% elif session.get('user_role') == 'receptionist' %}
+    <a href="/dashboard#queue" class="side-link"><span class="side-icon">≡</span>Today's Queue</a>
+    <a href="/dashboard#payments" class="side-link"><span class="side-icon">₹</span>Payments</a>
+    <a href="/dashboard#doctors" class="side-link"><span class="side-icon">●</span>Doctors</a>
+  {% else %}
+    <a href="/dashboard#departments" class="side-link"><span class="side-icon">▦</span>Departments</a>
+    <a href="/dashboard#doctors" class="side-link"><span class="side-icon">●</span>Doctors</a>
+  {% endif %}
+  <div class="sidebar-bottom"><div class="help-card"><b>QueueLess Hospital</b><span>Smart queues. Better care.</span></div></div>
+</aside>
+{% endif %}
+<main class="main-content {% if not session.get('user_id') %}public-content{% endif %}">
+{% block body %}{% endblock %}
+</main>
+</div>
+<div id="toast" class="toast"></div>
+<script src="{{ url_for('static', filename='js/common.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

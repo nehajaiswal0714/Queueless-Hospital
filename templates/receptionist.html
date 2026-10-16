@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Reception Desk · QueueLess{% endblock %}
+{% block body %}
+<div class="page-head"><div><div class="eyebrow">RECEPTION DESK</div><h1>Front desk control</h1><p>Register patients, manage queues, doctor availability and patient fees.</p></div><button class="btn btn-light" onclick="loadAll()">↻ Refresh</button></div>
+<div class="stat-grid" id="receptionStats"></div>
+<div class="dashboard-grid">
+<section class="panel" id="queue"><div class="panel-head"><div><h2>Add patient to queue</h2><p>Search an existing patient or create a new one.</p></div></div><form id="receptionQueueForm" class="form-grid"><label>Patient search<input id="patientSearch" placeholder="Name or email"><div id="patientResults" class="search-results"></div></label><input type="hidden" id="selectedPatientId"><label>Department<select id="receptionDepartment" required></select></label><label>Doctor<select id="receptionDoctor"><option value="">Assign later / any doctor</option></select></label><button class="btn btn-primary" type="submit">Add to queue <span>→</span></button></form><div class="subpanel"><div class="subpanel-head"><h3>New patient</h3><span class="muted">Temporary password can be changed later.</span></div><form id="newPatientForm" class="form-grid"><input name="name" placeholder="Patient name" required><input name="email" type="email" placeholder="Patient email" required><input name="password" value="patient123" placeholder="Temporary password"><button class="btn btn-light" type="submit">Create patient</button></form></div></section>
+<section class="panel span-2"><div class="panel-head"><div><h2>Today's queue</h2><p>Call, complete, skip or set emergency priority.</p></div><div class="inline-controls"><select id="queueDepartmentFilter"></select><select id="queueDoctorFilter"><option value="">All doctors</option></select></div></div><div id="receptionQueue" class="table-wrap"></div></section>
+<section class="panel span-2" id="payments"><div class="panel-head"><div><h2>Patient fees & payments</h2><p>Receptionist can decide or revise the patient's consultation fee and additional charges.</p></div></div><div id="receptionPayments" class="table-wrap"></div></section>
+<section class="panel" id="doctors"><div class="panel-head"><div><h2>Doctors & availability</h2><p>Edit timing and default fee.</p></div></div><div id="receptionDoctors" class="doctor-list"></div></section>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/receptionist.js') }}"></script>{% endblock %}

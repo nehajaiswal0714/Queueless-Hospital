@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block body %}
+<section class="auth-page">
+  <div class="auth-brand"><span class="brand-mark">Q</span><div><b>Queue<span class="brand-accent">Less</span></b><small>Smart Hospital Management</small></div></div>
+  <div class="auth-layout">
+    <div class="auth-intro"><div class="eyebrow">{{ role|upper }} PORTAL</div><h1>{{ 'Welcome back.' if mode=='login' else 'Create your account.' }}</h1><p>{{ 'Sign in to continue to your QueueLess hospital dashboard.' if mode=='login' else 'Set up your QueueLess account and manage your hospital journey digitally.' }}</p><div class="auth-points"><span>✓ Secure role-based access</span><span>✓ Live queue information</span><span>✓ Simple hospital billing</span></div></div>
+    <div class="auth-card"><div class="auth-card-head"><span class="role-icon">{{ role[:1]|upper }}</span><div><h2>{{ title }}</h2><small>{{ 'Enter your details to continue' if mode=='login' else 'All fields are required' }}</small></div></div>
+      <form id="authForm" data-role="{{ role }}" data-mode="{{ mode }}" class="auth-form">
+        {% if mode=='signup' %}<label>Full name<input name="name" placeholder="Enter full name" required></label>{% endif %}
+        <label>Email address<input name="email" type="email" placeholder="you@example.com" required></label>
+        <label>Password<input name="password" type="password" placeholder="Enter password" required></label>
+        {% if role=='admin' and mode=='signup' %}<label>Admin signup key<input name="admin_key" placeholder="Enter admin key" required></label>{% endif %}
+        <button class="btn btn-primary btn-block" type="submit">{{ 'Login to dashboard' if mode=='login' else 'Create account' }} <span>→</span></button>
+      </form><p id="msg" class="form-message"></p>
+      <div class="auth-switch">{% if mode=='login' %}New to QueueLess? <a href="/signup/{{ role }}">Create account</a>{% else %}Already have an account? <a href="/login/{{ role }}">Login</a>{% endif %}</div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/auth.js') }}"></script>{% endblock %}

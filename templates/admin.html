@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard · QueueLess{% endblock %}
+{% block body %}
+<div class="page-head"><div><div class="eyebrow">ADMIN PORTAL</div><h1>Hospital overview</h1><p>Manage departments, doctors and hospital-level information.</p></div><button class="btn btn-light" onclick="loadAdmin()">↻ Refresh</button></div>
+<div class="stat-grid" id="adminStats"></div>
+<div class="dashboard-grid">
+<section class="panel" id="departments"><div class="panel-head"><div><h2>Departments</h2><p>Add or deactivate hospital departments.</p></div></div><form id="departmentForm" class="form-grid"><input id="departmentName" placeholder="Department name" required><input id="departmentDescription" placeholder="Description"><button class="btn btn-primary" type="submit">+ Add department</button></form><div id="departmentsList" class="card-list"></div></section>
+<section class="panel" id="doctors"><div class="panel-head"><div><h2>Doctors</h2><p>Create doctors and set their default consultation fee.</p></div></div><form id="doctorForm" class="form-grid"><input id="adminDoctorName" placeholder="Doctor name" required><input id="adminDoctorEmail" type="email" placeholder="Doctor email" required><input id="adminDoctorSpecialization" placeholder="Specialization" value="General Medicine"><select id="adminDoctorDepartment" required></select><div class="form-row"><input id="adminDoctorStart" type="time" value="09:00"><input id="adminDoctorEnd" type="time" value="17:00"></div><input id="adminDoctorFee" type="number" min="0" step="0.01" placeholder="Default consultation fee (₹)"><button class="btn btn-primary" type="submit">+ Add doctor</button></form><div id="doctorsList" class="card-list"></div></section>
+<section class="panel span-2"><div class="panel-head"><div><h2>Tests & pricing</h2><p>Test details are managed only by doctors.</p></div></div><div id="testsList" class="card-list"></div></section>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/admin.js') }}"></script>{% endblock %}
