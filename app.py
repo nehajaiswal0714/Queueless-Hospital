@@ -61,7 +61,9 @@ def ensure_schema():
             )
         """)
 
-        # Tokens
+        # Tokens: persist estimated appointment times and cancellation timestamps.
+        conn.execute("ALTER TABLE tokens ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMP")
+        conn.execute("ALTER TABLE tokens ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMP")
         conn.execute("ALTER TABLE tokens ADD COLUMN IF NOT EXISTS doctor_id INTEGER REFERENCES doctors(id) ON DELETE SET NULL")
         conn.execute("ALTER TABLE tokens ADD COLUMN IF NOT EXISTS priority VARCHAR(20) NOT NULL DEFAULT 'normal'")
         conn.execute("ALTER TABLE tokens ADD COLUMN IF NOT EXISTS priority_set_by INTEGER REFERENCES users(id) ON DELETE SET NULL")
@@ -120,6 +122,79 @@ def parse_time(value):
     if not value:
         return None
     return datetime.strptime(value, "%H:%M").time()
+
+
+def reschedule_doctor_queue(conn, doctor_id):
+    """Recalculate and save estimated times for today's active doctor queue.
+
+    Estimates use a five-minute service slot. The calculation respects the
+    doctor's current shift and today's configured breaks. Existing records are
+    updated in place; no patient or token records are deleted.
+    """
+    doctor = conn.execute("""
+        SELECT id, shift_start, shift_end, available
+        FROM doctors WHERE id=%s AND active=TRUE
+    """, (doctor_id,)).fetchone()
+    if not doctor:
+        return
+
+    tokens = conn.execute("""
+        SELECT id, status, priority, booked_at
+        FROM tokens
+        WHERE doctor_id=%s
+          AND booked_at::date=CURRENT_DATE
+          AND status IN ('waiting','called')
+        ORDER BY CASE WHEN status='called' THEN 0 ELSE 1 END,
+                 CASE priority WHEN 'emergency' THEN 0 WHEN 'urgent' THEN 1 ELSE 2 END,
+                 booked_at, id
+        FOR UPDATE
+    """, (doctor_id,)).fetchall()
+
+    if not tokens:
+        return
+
+    now = datetime.now()
+    today = date.today()
+    cursor = max(now, datetime.combine(today, doctor['shift_start']))
+    if not doctor['available'] or now.time() >= doctor['shift_end']:
+        cursor = datetime.combine(today + __import__('datetime').timedelta(days=1), doctor['shift_start'])
+    elif now.time() < doctor['shift_start']:
+        cursor = datetime.combine(today, doctor['shift_start'])
+
+    for token in tokens:
+        # The patient already being called is considered in service now.
+        if token['status'] == 'called':
+            estimated = now
+            cursor = max(cursor, now + __import__('datetime').timedelta(minutes=5))
+        else:
+            # Move appointments beyond shift end to the next working shift.
+            if cursor.time() >= doctor['shift_end']:
+                cursor = datetime.combine(cursor.date() + __import__('datetime').timedelta(days=1), doctor['shift_start'])
+            # If the estimate falls in a scheduled break, resume at break end.
+            breaks = conn.execute("""
+                SELECT break_date, break_start, break_end
+                FROM doctor_breaks
+                WHERE doctor_id=%s AND break_date=%s
+                ORDER BY break_start
+            """, (doctor_id, cursor.date())).fetchall()
+            moved = True
+            while moved:
+                moved = False
+                for br in breaks:
+                    bstart = datetime.combine(br['break_date'], br['break_start'])
+                    bend = datetime.combine(br['break_date'], br['break_end'])
+                    if bstart <= cursor < bend:
+                        cursor = bend
+                        moved = True
+                if cursor.time() >= doctor['shift_end']:
+                    cursor = datetime.combine(cursor.date() + __import__('datetime').timedelta(days=1), doctor['shift_start'])
+                    breaks = conn.execute("""
+                        SELECT break_date, break_start, break_end FROM doctor_breaks
+                        WHERE doctor_id=%s AND break_date=%s ORDER BY break_start
+                    """, (doctor_id, cursor.date())).fetchall()
+            estimated = cursor
+            cursor += __import__('datetime').timedelta(minutes=5)
+        conn.execute("UPDATE tokens SET scheduled_at=%s WHERE id=%s", (estimated, token['id']))
 
 
 def doctor_state(conn, doctor_id):
@@ -550,6 +625,7 @@ def create_doctor():
             return fail("Email already exists.", 409)
 
 
+@app.put("/api/doctors/<int:doctor_id>")
 @app.put("/api/doctors/<int:doctor_id>/schedule")
 def change_schedule(doctor_id):
     if not role("doctor","receptionist","admin"):
@@ -609,6 +685,7 @@ def change_schedule(doctor_id):
             RETURNING *
         """, (department_id,specialization,start_time,end_time,bool(available),consultation_fee,doctor_id)).fetchone()
 
+        reschedule_doctor_queue(conn, doctor_id)
         conn.commit()
         return ok(doctor=row)
 
@@ -682,6 +759,7 @@ def add_break(doctor_id):
             RETURNING *
         """, (doctor_id,break_date,start_time,end_time)).fetchone()
 
+        reschedule_doctor_queue(conn, doctor_id)
         conn.commit()
         return ok(break_item=row)
 
@@ -706,6 +784,7 @@ def delete_break(break_id):
             return fail("Access denied.", 403)
 
         conn.execute("DELETE FROM doctor_breaks WHERE id=%s", (break_id,))
+        reschedule_doctor_queue(conn, b["doctor_id"])
         conn.commit()
         return ok(message="Break deleted.")
 
@@ -786,6 +865,8 @@ def create_token():
             VALUES(%s,%s,0,%s,0,%s)
         """, (token["id"],doctor_fee,doctor_fee,'pending'))
 
+        if doctor_id:
+            reschedule_doctor_queue(conn, doctor_id)
         conn.commit()
         return ok(token=token)
 
@@ -796,6 +877,15 @@ def my_tokens():
         return fail("Patient login required.", 403)
 
     with db() as conn:
+        assigned = conn.execute("""
+            SELECT DISTINCT doctor_id FROM tokens
+            WHERE user_id=%s AND doctor_id IS NOT NULL
+              AND booked_at::date=CURRENT_DATE
+              AND status IN ('waiting','called')
+        """, (session["user_id"],)).fetchall()
+        for item in assigned:
+            reschedule_doctor_queue(conn, item["doctor_id"])
+
         rows = conn.execute("""
             SELECT t.*,dep.name AS department_name,
                    d.name AS doctor_name,
@@ -876,6 +966,32 @@ def queue():
         """
 
         return ok(queue=conn.execute(sql,params).fetchall())
+
+
+@app.put("/api/my-tokens/<int:token_id>/cancel")
+def cancel_my_token(token_id):
+    """Allow a patient to cancel their own token while it is still waiting."""
+    if not role("patient"):
+        return fail("Patient login required.", 403)
+
+    with db() as conn:
+        token = conn.execute("""
+            SELECT id, user_id, doctor_id, status
+            FROM tokens WHERE id=%s FOR UPDATE
+        """, (token_id,)).fetchone()
+        if not token or token["user_id"] != session["user_id"]:
+            return fail("Token not found.", 404)
+        if token["status"] != "waiting":
+            return fail("Only waiting tokens can be cancelled.")
+
+        conn.execute("""
+            UPDATE tokens SET status='cancelled', cancelled_at=CURRENT_TIMESTAMP
+            WHERE id=%s
+        """, (token_id,))
+        if token["doctor_id"]:
+            reschedule_doctor_queue(conn, token["doctor_id"])
+        conn.commit()
+        return ok(message="Token cancelled. The remaining queue times have been updated.")
 
 
 # ============================================================
@@ -975,6 +1091,8 @@ def token_status(token_id):
             RETURNING *
         """, (new_status,new_status,new_status,token_id)).fetchone()
 
+        if token["doctor_id"]:
+            reschedule_doctor_queue(conn, token["doctor_id"])
         conn.commit()
         return ok(token=row)
 
@@ -1430,6 +1548,7 @@ def assign_token_doctor(token_id):
             return fail("Doctor does not belong to this department.")
         row=conn.execute("UPDATE tokens SET doctor_id=%s WHERE id=%s RETURNING *",(doctor_id,token_id)).fetchone()
         conn.execute("""UPDATE payments SET doctor_fee=%s,total_amount=doctor_fee+other_charges,updated_at=CURRENT_TIMESTAMP WHERE token_id=%s AND paid_amount=0""",(doctor["consultation_fee"],token_id))
+        reschedule_doctor_queue(conn, doctor_id)
         conn.commit()
         return ok(token=row)
 

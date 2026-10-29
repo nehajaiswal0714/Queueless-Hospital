@@ -1,15 +1,114 @@
+
 {% extends 'base.html' %}
 {% block title %}Patient Dashboard · QueueLess{% endblock %}
+
 {% block body %}
-<div class="page-head"><div><div class="eyebrow">PATIENT DASHBOARD</div><h1>Good to see you, {{ session.get('user_name') }}.</h1><p>Manage your hospital visit, queue and payments from one place.</p></div><button class="btn btn-light" onclick="loadAll()">↻ Refresh</button></div>
+<div class="page-head">
+  <div>
+    <div class="eyebrow">PATIENT DASHBOARD</div>
+    <h1>Good to see you, {{ session.get('user_name') }}.</h1>
+    <p>Manage your hospital visit, queue and payments from one place.</p>
+  </div>
+  <button class="btn btn-light" onclick="loadAll()">↻ Refresh</button>
+</div>
+
 <div class="stat-grid" id="patientStats"></div>
+
 <div class="dashboard-grid main-grid">
-<section class="panel span-2" id="tokens"><div class="panel-head"><div><h2>Book a virtual token</h2><p>Choose a department and doctor to join the live queue.</p></div></div><div class="booking-box"><label>Department<select id="department"></select></label><label>Doctor<select id="doctor"><option value="">Select doctor</option></select></label><button class="btn btn-primary" onclick="bookToken()">Book token <span>→</span></button></div><p id="bookMsg" class="form-message"></p></section>
-<section class="panel"><div class="panel-head"><div><h2>Doctor availability</h2><p>Live schedule</p></div></div><div id="doctors" class="doctor-list"></div></section>
-<section class="panel span-2"><div class="panel-head"><div><h2>My queue tokens</h2><p>Track your current and previous visits.</p></div></div><div id="tokenList" class="token-cards"></div></section>
-<section class="panel" id="tests"><div class="panel-head"><div><h2>Tests & prices</h2><p>Book a test at the displayed price.</p></div></div><div id="testList" class="card-list"></div><div class="subpanel test-booker"><label>Book test<select id="testSelect"></select></label><button class="btn btn-primary" onclick="bookSelectedTest()">Book test</button></div></section>
-<section class="panel"><div class="panel-head"><div><h2>Surgery schemes</h2><p>Available hospital support schemes.</p></div></div><div id="surgeries" class="card-list"></div></section>
-<section class="panel span-2" id="payments"><div class="panel-head"><div><h2>Payments & fees</h2><p>Consultation fee, additional charges and balance.</p></div></div><div id="paymentList" class="table-wrap"></div></section>
+
+  <section class="panel span-2" id="tokens">
+    <div class="panel-head">
+      <div>
+        <h2>Book a virtual token</h2>
+        <p>Choose a department and doctor to join the live queue.</p>
+      </div>
+    </div>
+
+    <div class="booking-box">
+      <label>
+        Department
+        <select id="department"></select>
+      </label>
+
+      <label>
+        Doctor
+        <select id="doctor">
+          <option value="">Select doctor</option>
+        </select>
+      </label>
+
+      <button class="btn btn-primary" onclick="bookToken()">
+        Book token <span>→</span>
+      </button>
+    </div>
+
+    <p id="bookMsg" class="form-message"></p>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>Doctor availability</h2>
+        <p>Live schedule</p>
+      </div>
+    </div>
+    <div id="doctors" class="doctor-list"></div>
+  </section>
+
+  <section class="panel span-2">
+    <div class="panel-head">
+      <div>
+        <h2>My queue tokens</h2>
+        <p>Your doctor, estimated appointment time and visit status.</p>
+      </div>
+    </div>
+    <div id="tokenList" class="token-cards"></div>
+  </section>
+
+  <section class="panel" id="tests">
+    <div class="panel-head">
+      <div>
+        <h2>Tests & prices</h2>
+        <p>Book a test at the displayed price.</p>
+      </div>
+    </div>
+
+    <div id="testList" class="card-list"></div>
+
+    <div class="subpanel test-booker">
+      <label>
+        Book test
+        <select id="testSelect"></select>
+      </label>
+      <button class="btn btn-primary" onclick="bookSelectedTest()">
+        Book test
+      </button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>Surgery schemes</h2>
+        <p>Available hospital support schemes.</p>
+      </div>
+    </div>
+    <div id="surgeries" class="card-list"></div>
+  </section>
+
+  <section class="panel span-2" id="payments">
+    <div class="panel-head">
+      <div>
+        <h2>Payments & fees</h2>
+        <p>Consultation fee, additional charges and balance.</p>
+      </div>
+    </div>
+    <div id="paymentList" class="table-wrap"></div>
+  </section>
+
 </div>
 {% endblock %}
-{% block scripts %}<script src="{{ url_for('static', filename='js/patient.js') }}"></script>{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/patient.js') }}"></script>
+{% endblock %}
